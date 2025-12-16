@@ -1,0 +1,90 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 48 half-hour periods in a day
+time = np.arange(48)
+
+# Simple daily demand shape (made-up but realistic)
+# Low at night, peak in the evening
+base_profile = (
+    0.4
+    + 0.3 * np.exp(-0.5 * (time - 16)**2 / 6)
+    + 0.6 * np.exp(-0.5 * (time - 34)**2 / 10)
+)
+
+# Number of households
+houses = 300
+
+# Average power per house (kW)
+avg_power_per_house = 1.5
+
+# Total demand (kW)
+total_demand = base_profile * houses * avg_power_per_house
+
+# Plot
+plt.figure()
+plt.plot(time, total_demand)
+plt.xlabel("Half-hour periods (0 = midnight)")
+plt.ylabel("Total demand (kW)")
+plt.title("Baseline Residential Electricity Demand")
+plt.show()
+
+# EV assumptions
+evs = int(0.3 * houses)
+ev_power = 7  # kW per EV
+
+# EV charging profile (48 half-hour slots)
+ev_profile = np.zeros(48)
+
+# Charging from 17:00 (slot 34) to 23:00 (slot 46)
+ev_profile[34:46] = evs * ev_power
+
+# Total demand with EVs
+demand_with_evs = total_demand + ev_profile
+
+# Plot comparison
+plt.figure()
+plt.plot(time, total_demand, label="No EVs")
+plt.plot(time, demand_with_evs, label="30% EVs")
+plt.xlabel("Half-hour periods (0 = midnight)")
+plt.ylabel("Total demand (kW)")
+plt.title("Impact of EV Charging on Electricity Demand")
+plt.legend()
+plt.show()
+
+# Network capacity limit (kW)
+network_limit = 800
+
+plt.figure()
+plt.plot(time, total_demand, label="No EVs")
+plt.plot(time, demand_with_evs, label="30% EVs")
+plt.axhline(network_limit, linestyle="--", label="Network limit")
+
+plt.xlabel("Half-hour periods (0 = midnight)")
+plt.ylabel("Total demand (kW)")
+plt.title("Network Overload Due to EV Charging")
+plt.legend()
+plt.show()
+
+# Smart charging profile (delay EV charging)
+smart_ev_profile = np.zeros(48)
+
+# Shift charging to 22:00–04:00 (slots 44 to 8, wrap around)
+smart_ev_profile[44:48] = evs * ev_power
+smart_ev_profile[0:8] = evs * ev_power
+
+# New total demand
+demand_with_smart_charging = total_demand + smart_ev_profile
+
+
+plt.figure()
+plt.plot(time, total_demand, label="No EVs")
+plt.plot(time, demand_with_evs, label="Uncontrolled EV charging")
+plt.plot(time, demand_with_smart_charging, label="Smart EV charging")
+plt.axhline(network_limit, linestyle="--", label="Network limit")
+
+plt.xlabel("Half-hour periods (0 = midnight)")
+plt.ylabel("Total demand (kW)")
+plt.title("Mitigating EV-Induced Network Overload")
+plt.legend()
+plt.show()
